@@ -199,6 +199,10 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 		var lastChangeTick:Int = tempoChanges[0].tick;
 		var lastTime:Float = lastChangeTick * tickCrochet;
 
+		var lastNoteObject:GuitarHeroTimedObject = null;
+		var lastNote:BasicNote = null;
+		var lastNotesOfTick:Array<BasicNote> = [];
+
 		for (note in chartSingle)
 		{
 			if (note.type != NOTE_EVENT) // TODO: maybe could support lyric events later
@@ -218,13 +222,42 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 			final time:Float = lastTime + ((note.tick - lastChangeTick) * tickCrochet);
 			final lane:Int = note.values[0];
 			final length:Float = note.values[1] * tickCrochet;
+			var type:String = "";
+			if (lastNoteObject != null) {
+				if (lastNoteObject.tick == note.tick) {
+					if (lane == 5) {
+						lastNote.type = "hopo";
+						for (n in lastNotesOfTick) n.type = "hopo";
+						continue;
+					} else if (lane == 6) {
+						lastNote.type = "tap";
+						for (n in lastNotesOfTick) n.type = "tap";
+						continue;
+					} else {
+						if (lastNote.type == "hopo") { //natural hopo cant be a chord
+							lastNote.type = "";
+						}
+					}
+
+					lastNotesOfTick.push(lastNote);
+				} else {
+					lastNotesOfTick = [];
+					if (lane != lastNote.lane) {
+						if (Math.abs(note.tick - lastNoteObject.tick) <= resMult * 65) {
+							type = "hopo";
+						}
+					}
+				}
+			}
 
 			notes.push({
 				time: time * resMult,
 				lane: lane,
 				length: length * resMult,
-				type: ""
+				type: type
 			});
+			lastNoteObject = note;
+			lastNote = notes[notes.length-1];
 		}
 
 		return notes;
@@ -264,7 +297,51 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 	// TODO
 	override function getEvents():Array<BasicEvent>
 	{
-		return [];
+		var diff:String = "expert";
+		var chartSingle = data.Notes.get(diff);
+		if (chartSingle == null)
+		{
+			throw "Couldn't find Guitar Hero notes for difficulty " + (diff ?? "null");
+			return null;
+		}
+
+		var events:Array<BasicEvent> = [];
+		chartSingle.sort((a, b) -> Util.sortValues(a.tick, b.tick));
+
+		final tempoChanges:Array<GhBpmChange> = getTempoChanges();
+		final res = data.Song.Resolution;
+		final resMult = res / GUITAR_HERO_RESOLUTION;
+
+		// Precalculate the first tempo change
+		var tempoIndex:Int = 1;
+		var tickCrochet:Float = getTickCrochet(tempoChanges[0].bpm, res);
+		var lastChangeTick:Int = tempoChanges[0].tick;
+		var lastTime:Float = lastChangeTick * tickCrochet;
+
+		for (note in chartSingle)
+		{
+			if (note.type != SPECIAL_PHRASE)
+				continue;
+
+			// Calculate all tempo changes mid notes
+			while (tempoIndex < tempoChanges.length && note.tick >= tempoChanges[tempoIndex].tick)
+			{
+				final change = tempoChanges[tempoIndex++];
+				final elapsedTicks:Int = (change.tick - lastChangeTick);
+
+				lastTime += (elapsedTicks * tickCrochet);
+				tickCrochet = getTickCrochet(change.bpm, res);
+				lastChangeTick = change.tick;
+			}
+
+			final time:Float = lastTime + ((note.tick - lastChangeTick) * tickCrochet);
+			final lane:Int = note.values[0];
+			final length:Float = note.values[1] * tickCrochet;
+
+			events.push(Util.makeArrayEvent(time * resMult, "Star Power Phrase", [length * resMult]));
+		}
+
+		return events;
 	}
 
 	override function getChartMeta():BasicMetaData

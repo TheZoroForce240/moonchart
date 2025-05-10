@@ -100,13 +100,13 @@ class FNFCodename extends BasicJsonFormat<FNFCodenameFormat, FNFCodenameMeta>
 		for (note in basicNotes)
 		{
 			var lane:Int = note.lane;
-			var strumline:FNFCodenameStrumline = strumlines[Std.int(lane / 4)];
+			var strumline:FNFCodenameStrumline = strumlines[Std.int(lane / 5)];
 
 			if (strumline == null)
 				continue;
 
 			var type:Int = resolveCodenameType(note.type, noteTypes);
-			var id:Int = lane % 4;
+			var id:Int = lane % 5;
 
 			strumline.notes.push({
 				time: note.time,
@@ -132,7 +132,7 @@ class FNFCodename extends BasicJsonFormat<FNFCodenameFormat, FNFCodenameMeta>
 			} : {
 				time: event.time,
 				name: event.name,
-				params: Util.resolveEventValues(event.data)
+				params: Util.resolveEventValues(event)
 				});
 		}
 
@@ -205,10 +205,10 @@ class FNFCodename extends BasicJsonFormat<FNFCodenameFormat, FNFCodenameMeta>
 			return 0;
 
 		if (list.contains(type))
-			return list.indexOf(type);
+			return list.indexOf(type)+1;
 
 		list.push(type);
-		return list.length - 1;
+		return list.length;
 	}
 
 	override function getNotes(?diff:String):Array<BasicNote>
