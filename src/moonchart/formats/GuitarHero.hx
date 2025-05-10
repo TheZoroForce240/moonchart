@@ -251,9 +251,9 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 			}
 
 			notes.push({
-				time: time * resMult,
+				time: time,
 				lane: lane,
-				length: length * resMult,
+				length: length,
 				type: type
 			});
 			lastNoteObject = note;
@@ -338,7 +338,7 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 			final lane:Int = note.values[0];
 			final length:Float = note.values[1] * tickCrochet;
 
-			events.push(Util.makeArrayEvent(time * resMult, "Star Power Phrase", [length * resMult]));
+			events.push(Util.makeArrayEvent(time, "Star Power Phrase", [length]));
 		}
 
 		return events;
@@ -374,7 +374,7 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 			time += elapsedTicks * tickCrochet;
 
 			Util.setArray(bpmChanges, i + 1, {
-				time: time * resMult,
+				time: time,
 				bpm: bpm,
 				beatsPerMeasure: change.beatsPerMeasure,
 				stepsPerBeat: change.stepsPerBeat
