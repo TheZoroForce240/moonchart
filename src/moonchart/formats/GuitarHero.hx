@@ -219,18 +219,24 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 				lastChangeTick = change.tick;
 			}
 
+			function setModifier(currentT:String, newT:String) {
+				if (currentT == "open") return currentT + "-" + newT;
+				if (currentT == "hopo" && newT == "hopo") return ""; //flip modifier back
+				return newT;
+			}
+
 			final time:Float = lastTime + ((note.tick - lastChangeTick) * tickCrochet);
-			final lane:Int = note.values[0];
+			var lane:Int = note.values[0];
 			final length:Float = note.values[1] * tickCrochet;
 			var type:String = "";
 			if (lastNoteObject != null) {
 				if (lastNoteObject.tick == note.tick) {
 					if (lane == 5) {
-						lastNote.type = "hopo";
+						lastNote.type = setModifier(lastNote.type, "hopo");
 						for (n in lastNotesOfTick) n.type = "hopo";
 						continue;
 					} else if (lane == 6) {
-						lastNote.type = "tap";
+						lastNote.type = setModifier(lastNote.type, "tap");
 						for (n in lastNotesOfTick) n.type = "tap";
 						continue;
 					} else {
@@ -248,6 +254,11 @@ class GuitarHero extends BasicFormat<GuitarHeroFormat, {}>
 						}
 					}
 				}
+			}
+
+			if (lane == 7) {
+				type = "open";
+				lane = 0;
 			}
 
 			notes.push({

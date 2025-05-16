@@ -1,5 +1,6 @@
 package moonchart.parsers;
 
+import haxe.io.Path;
 import moonchart.parsers.BasicParser;
 
 using StringTools;
@@ -26,7 +27,8 @@ typedef GuitarHeroSong =
 	Charter:String,
 	Album:String,
 	Resolution:Int,
-	Offset:Float
+	Offset:Float,
+	?Streams:Array<String>
 }
 
 enum abstract GuitarHeroTrackEvent(String) from String to String
@@ -203,6 +205,11 @@ class GuitarHeroParser extends BasicParser<GuitarHeroFormat>
 			var field = values[0].rtrim();
 			var value = values[1].replace('"', '');
 			Reflect.setField(gh, field, resolveBasic(value));
+
+			if (field.endsWith("Stream")) {
+				if (gh.Streams == null) gh.Streams = [];
+				gh.Streams.push(Path.withoutExtension(value.trim()));
+			}
 		}
 		return gh;
 	}
